@@ -1,4 +1,6 @@
 import CategoryFilter from '@/components/CategoryFilter';
+import ErrorDisplay from '@/components/ErrorDisplay';
+import LoadingSpinner from '@/components/LoadingSpinner';
 import Pagnination from '@/components/Pagnination';
 import ProductList from '@/components/ProductList';
 import SearchBar from '@/components/SearchBar';
@@ -23,6 +25,7 @@ export default function HomePage() {
         const apiUrl = `http://localhost:3000/api/products?page=${currentPage}&search=${searchQuery}&categoryId=${selectedCategory}`;
         const response = await fetch(apiUrl);
         if (!response.ok) {
+          console.log(response.statusText);
           throw new Error(`HTTP error! status: ${response.status}`);
         }
 
@@ -31,9 +34,10 @@ export default function HomePage() {
         setTotalPages(data.totalPages);
         setCurrentPage(data.currentPage);
       } catch (error) {
-        setError('Failed to fetch products');
+        console.log(error);
+        setError('Failed to fetch products, please try again later.');
+
         setProducts([]);
-        console.error(error);
       } finally {
         setIsLoading(false);
       }
@@ -44,12 +48,14 @@ export default function HomePage() {
 
   return (
     <div>
-      <div className='flex gap-2  justify-end w-full h-full'>
-        <CategoryFilter onSelectCategory={setSelectedCategory} />
-        <SearchBar onSearchChange={setSearchQuery} />
-      </div>
-      {isLoading && <p>Loading products...</p>}
-      {error && <p style={{ color: 'red' }}>Error: {error}</p>}
+      {!error && (
+        <div className='flex gap-2  justify-end w-full h-full'>
+          <CategoryFilter onSelectCategory={setSelectedCategory} />
+          <SearchBar onSearchChange={setSearchQuery} />
+        </div>
+      )}
+      {isLoading && <LoadingSpinner />}
+      {error && <ErrorDisplay error={error}></ErrorDisplay>}
       {!isLoading && !error && products.length === 0 && (
         <p>No products found.</p>
       )}
