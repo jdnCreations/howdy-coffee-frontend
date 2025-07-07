@@ -20,6 +20,13 @@ export default function HomePage() {
     setIsLoading(true);
     setError(null);
 
+    const existingCart = localStorage.getItem('cartId');
+    if (existingCart) {
+      console.log('existing cart in localStorage');
+    } else {
+      console.log('does not have a cartId in localStorage');
+    }
+
     const fetchProducts = async () => {
       try {
         const apiUrl = `http://localhost:3000/api/products?page=${currentPage}&search=${searchQuery}&categoryId=${selectedCategory}`;
@@ -49,7 +56,7 @@ export default function HomePage() {
   return (
     <div>
       {!error && (
-        <div className='flex gap-2  justify-end w-full h-full'>
+        <div className='flex gap-2 justify-between sm:justify-end w-full h-full'>
           <CategoryFilter onSelectCategory={setSelectedCategory} />
           <SearchBar onSearchChange={setSearchQuery} />
         </div>
@@ -57,7 +64,9 @@ export default function HomePage() {
       {isLoading && <LoadingSpinner />}
       {error && <ErrorDisplay error={error}></ErrorDisplay>}
       {!isLoading && !error && products.length === 0 && (
-        <p>No products found.</p>
+        <div className='text-amber-600 text-2xl py-2'>
+          <p>Sorry, no products match your search.</p>
+        </div>
       )}
       {!isLoading && !error && products.length > 0 && (
         <ProductList products={products} />

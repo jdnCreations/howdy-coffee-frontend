@@ -38,6 +38,10 @@ export default function ProductDetail() {
     }
   }, [id]);
 
+  const handleAddToCart = (productId: number) => {
+    console.log(`Add to cart ${productId}`);
+  };
+
   return (
     <div className='flex flex-col items-center justify-center'>
       {error && <ErrorDisplay error={error} />}
@@ -57,7 +61,10 @@ export default function ProductDetail() {
           <p className=''>{product.description}</p>
           <div className='flex justify-between align-bottom'>
             <p className='text-xl'>${product.price}</p>
-            <button className='bg-amber-500 py-2 px-4 font-medium rounded rounded-md mt-2'>
+            <button
+              className='bg-amber-500 py-2 px-4 font-medium rounded rounded-md mt-2'
+              onClick={() => handleAddToCart(product.id)}
+            >
               Add to Cart
             </button>
           </div>
