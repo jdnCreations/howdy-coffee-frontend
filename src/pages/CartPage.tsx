@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 interface CartItem {
   cartId: number;
@@ -17,14 +18,11 @@ export default function CartPage() {
   const [itemsInCart, setItemsInCart] = useState<CartItem[]>([]);
   const [cartToken, setCartToken] = useState<string | null>(null);
 
+  const navigate = useNavigate();
+
   // get cartToken from localStorage, if it exists fetch products from api
   useEffect(() => {
     const fetchCartItems = async () => {
-      console.log('fetching cart items');
-      if (!cartToken) {
-        return;
-      }
-      console.log('fetching response ');
       const response = await fetch(
         `http://localhost:3000/api/carts/${cartToken}`
       );
@@ -34,7 +32,6 @@ export default function CartPage() {
 
       const data = await response.json();
       setItemsInCart(data.items);
-      console.log(data);
     };
 
     const createCart = async () => {
@@ -46,6 +43,7 @@ export default function CartPage() {
       }
 
       const data = await response.json();
+      console.log(data);
       if (data.cartToken) {
         localStorage.setItem('cartToken', data.cartToken);
         setCartToken(data.cartToken);
@@ -57,50 +55,65 @@ export default function CartPage() {
       console.log('no token found in localStorage');
       createCart();
     } else {
+      console.log("we have a cartToken.");
       setCartToken(localStorageCartToken);
     }
 
     fetchCartItems();
-  }, [cartToken]);
+  }, []); 
 
   const removeItemFromCart = async (productId: number) => {
-    const body = JSON.stringify({ productId: productId });
     const response = await fetch(
       `http://localhost:3000/api/carts/${cartToken}/items`,
       {
         method: 'DELETE',
-        body: body,
+        body: JSON.stringify({"productId": productId}),
+        headers: {
+          "content-type": "application/json"
+        }
       }
     );
     if (!response.ok) {
       throw new Error('Could not remove item from cart');
     }
 
-    if (response.status === 204) {
-      console.log('success');
-    } else {
-      console.log('uh oh', response.status);
-    }
+    // remove item from itemsInCart
+    setItemsInCart(itemsInCart.filter((item) => item.product.id !== productId)); 
   };
 
   return (
     <div className='text-amber-300 '>
-      <h1 className='font-bold text-3xl'>Your cart</h1>
+      <h1 className='font-bold text-3xl text-amber-500'>Your cart</h1>
       {itemsInCart.length == 0 && (
-        <p>You currently have no items in your cart.</p>
+        <div>
+          <p>You currently have no items in your cart.</p>
+          <button onClick={() => navigate("/")}>Back</button>
+        </div>
       )}
-      <div className='bg-amber-900 rounded rounded-md p-4 my-4'>
         {itemsInCart &&
           itemsInCart.map((item) => (
-            <div key={item.id}>
+            <div>
+
+          <div className='bg-amber-900 rounded rounded-md p-4 my-4 flex flex-col gap-4'>
+            <div key={item.id} className='flex gap-2 justify-between'>
+              <div>
+
               <p className='font-bold'>{item.product.name}</p>
-              <p>{item.quantity}</p>
-              <button onClick={() => removeItemFromCart(item.product.id)}>
+              <p>${item.product.price}</p>
+              <p>x {item.quantity}</p>
+
+              </div>
+              <button className='border rounded rounded-sm p-2' onClick={() => removeItemFromCart(item.product.id)}>
                 Remove from cart
               </button>
             </div>
-          ))}
+          </div>
+                <div>
+        <button className='bg-amber-300 text-amber-900 font-bold text-xl p-2 rounded rounded-md'>Checkout</button>
       </div>
+            </div>
+          ))}
+
     </div>
   );
 }

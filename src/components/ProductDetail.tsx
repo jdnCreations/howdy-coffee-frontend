@@ -38,8 +38,18 @@ export default function ProductDetail() {
     }
   }, [id]);
 
-  const handleAddToCart = (productId: number) => {
-    console.log(`Add to cart ${productId}`);
+  const handleAddToCart = async(productId: number) => {
+    const cartToken = localStorage.getItem("cartToken");
+    console.log(`cartToken: ${cartToken}`)
+    const response = await fetch(`http://localhost:3000/api/carts/${cartToken}/items`, {
+      method: "POST",
+      body: JSON.stringify({"productId": productId, "quantity": 1}),
+      headers: {
+        "content-type": "application/json"
+      }
+    })
+    const data = await response.json();
+    console.log(data);
   };
 
   return (

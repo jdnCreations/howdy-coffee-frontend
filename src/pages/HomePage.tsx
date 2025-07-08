@@ -5,6 +5,7 @@ import Pagnination from '@/components/Pagnination';
 import ProductList from '@/components/ProductList';
 import SearchBar from '@/components/SearchBar';
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export default function HomePage() {
   const [products, setProducts] = useState([]);
@@ -16,15 +17,17 @@ export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
 
+  const navigate = useNavigate();
+
   useEffect(() => {
     setIsLoading(true);
     setError(null);
 
-    const existingCart = localStorage.getItem('cartId');
+    const existingCart = localStorage.getItem('cartToken');
     if (existingCart) {
       console.log('existing cart in localStorage');
     } else {
-      console.log('does not have a cartId in localStorage');
+      console.log('does not have a cartToken in localStorage');
     }
 
     const fetchProducts = async () => {
@@ -58,7 +61,8 @@ export default function HomePage() {
       {!error && (
         <div className='flex gap-2 justify-between sm:justify-end w-full h-full'>
           <CategoryFilter onSelectCategory={setSelectedCategory} />
-          <SearchBar onSearchChange={setSearchQuery} />
+          <SearchBar onSearchChange={setSearchQuery} />  
+          <button className='bg-amber-800 rounded rounded-sm text-amber-300 px-4 hover:cursor-pointer hover:bg-amber-700' onClick={() => navigate("/cart")}>Cart</button>
         </div>
       )}
       {isLoading && <LoadingSpinner />}
