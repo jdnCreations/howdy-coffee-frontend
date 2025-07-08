@@ -23,15 +23,22 @@ export default function CartPage() {
   // get cartToken from localStorage, if it exists fetch products from api
   useEffect(() => {
     const fetchCartItems = async () => {
-      const response = await fetch(
-        `http://localhost:3000/api/carts/${cartToken}`
-      );
-      if (!response.ok) {
-        throw new Error('Could not fetch cart items');
+      if (!cartToken) {
+        return;
       }
+      try {
+        const response = await fetch(
+          `http://localhost:3000/api/carts/${cartToken}`
+        );
+        if (!response.ok) {
+          throw new Error('Could not fetch cart items');
+        }
 
-      const data = await response.json();
-      setItemsInCart(data.items);
+        const data = await response.json();
+        setItemsInCart(data.items);
+      } catch (error) {
+        console.error(error);
+      }
     };
 
     const createCart = async () => {
@@ -50,27 +57,28 @@ export default function CartPage() {
       }
     };
 
-    const localStorageCartToken = localStorage.getItem('cartToken');
-    if (!localStorageCartToken) {
-      console.log('no token found in localStorage');
-      createCart();
-    } else {
-      console.log("we have a cartToken.");
-      setCartToken(localStorageCartToken);
+    if (!cartToken) {
+      const localStorageCartToken = localStorage.getItem('cartToken');
+      if (!localStorageCartToken) {
+        console.log('no token found in localStorage');
+        createCart();
+      } else {
+        setCartToken(localStorageCartToken);
+      }
     }
 
     fetchCartItems();
-  }, []); 
+  }, [cartToken]);
 
   const removeItemFromCart = async (productId: number) => {
     const response = await fetch(
       `http://localhost:3000/api/carts/${cartToken}/items`,
       {
         method: 'DELETE',
-        body: JSON.stringify({"productId": productId}),
+        body: JSON.stringify({ productId: productId }),
         headers: {
-          "content-type": "application/json"
-        }
+          'content-type': 'application/json',
+        },
       }
     );
     if (!response.ok) {
@@ -78,7 +86,7 @@ export default function CartPage() {
     }
 
     // remove item from itemsInCart
-    setItemsInCart(itemsInCart.filter((item) => item.product.id !== productId)); 
+    setItemsInCart(itemsInCart.filter((item) => item.product.id !== productId));
   };
 
   return (
@@ -87,33 +95,35 @@ export default function CartPage() {
       {itemsInCart.length == 0 && (
         <div>
           <p>You currently have no items in your cart.</p>
-          <button onClick={() => navigate("/")}>Back</button>
+          <button onClick={() => navigate('/')}>Back</button>
         </div>
       )}
-        {itemsInCart &&
-          itemsInCart.map((item) => (
-            <div>
-
-          <div className='bg-amber-900 rounded rounded-md p-4 my-4 flex flex-col gap-4'>
-            <div key={item.id} className='flex gap-2 justify-between'>
+      {itemsInCart &&
+        itemsInCart.map((item) => (
+          <div
+            key={item.id}
+            className='bg-amber-900 rounded rounded-md p-4 my-4 flex flex-col gap-4'
+          >
+            <div className='flex gap-2 justify-between'>
               <div>
-
-              <p className='font-bold'>{item.product.name}</p>
-              <p>${item.product.price}</p>
-              <p>x {item.quantity}</p>
-
+                <p className='font-bold'>{item.product.name}</p>
+                <p>${item.product.price}</p>
+                <p>x {item.quantity}</p>
               </div>
-              <button className='border rounded rounded-sm p-2' onClick={() => removeItemFromCart(item.product.id)}>
+              <button
+                className='border rounded rounded-sm p-2'
+                onClick={() => removeItemFromCart(item.product.id)}
+              >
                 Remove from cart
               </button>
             </div>
           </div>
-                <div>
-        <button className='bg-amber-300 text-amber-900 font-bold text-xl p-2 rounded rounded-md'>Checkout</button>
+        ))}
+      <div>
+        <button className='bg-amber-300 text-amber-900 font-bold text-xl p-2 rounded rounded-md'>
+          Checkout
+        </button>
       </div>
-            </div>
-          ))}
-
     </div>
   );
 }
