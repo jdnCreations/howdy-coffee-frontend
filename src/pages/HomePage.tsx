@@ -4,7 +4,7 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import Pagnination from '@/components/Pagnination';
 import ProductList from '@/components/ProductList';
 import SearchBar from '@/components/SearchBar';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 export default function HomePage() {
@@ -17,18 +17,70 @@ export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
 
+  const [cartToken, setCartToken] = useState<string | null>(null);
+  const [itemsInCart, setItemsInCart] = useState([]);
+
   const navigate = useNavigate();
+
+  const fetchCartItems = useCallback(async () => {
+    if (!cartToken) {
+      return;
+    }
+    try {
+      const response = await fetch(
+        `http://localhost:3000/api/carts/${cartToken}`
+      );
+      if (!response.ok) {
+        throw new Error('Could not fetch cart items');
+      }
+
+      const data = await response.json();
+      setItemsInCart(data.items);
+    } catch (error) {
+      console.error(error);
+    }
+  }, [cartToken]);
+
+  const handleCartChange = async () => {
+    await fetchCartItems();
+  };
 
   useEffect(() => {
     setIsLoading(true);
     setError(null);
 
-    const existingCart = localStorage.getItem('cartToken');
-    if (existingCart) {
-      console.log('existing cart in localStorage');
-    } else {
-      console.log('does not have a cartToken in localStorage');
-    }
+    const createCart = async () => {
+      const response = await fetch('http://localhost:3000/api/carts', {
+        method: 'POST',
+      });
+      if (!response.ok) {
+        throw new Error('Could not create new cart');
+      }
+
+      const data = await response.json();
+      console.log(data);
+      if (data.cartToken) {
+        localStorage.setItem('cartToken', data.cartToken);
+        setCartToken(data.cartToken);
+      }
+    };
+
+    const handleCartLoading = async () => {
+      if (!cartToken) {
+        const existingCartToken = localStorage.getItem('cartToken');
+        if (!existingCartToken) {
+          console.log('no token found in localStorage');
+          createCart();
+        } else {
+          // TODO: Make sure the cartToken is actually attached to a cart
+          console.log('cartToken in localStorage');
+          setCartToken(existingCartToken);
+        }
+      } else {
+        console.log('cartToken exists, load cart');
+        await fetchCartItems();
+      }
+    };
 
     const fetchProducts = async () => {
       try {
@@ -54,15 +106,21 @@ export default function HomePage() {
     };
 
     fetchProducts();
-  }, [currentPage, searchQuery, selectedCategory]);
+    handleCartLoading();
+  }, [currentPage, searchQuery, selectedCategory, cartToken, fetchCartItems]);
 
   return (
     <div>
       {!error && (
         <div className='flex gap-2 justify-between sm:justify-end w-full h-full'>
           <CategoryFilter onSelectCategory={setSelectedCategory} />
-          <SearchBar onSearchChange={setSearchQuery} />  
-          <button className='bg-amber-800 rounded rounded-sm text-amber-300 px-4 hover:cursor-pointer hover:bg-amber-700' onClick={() => navigate("/cart")}>Cart</button>
+          <SearchBar onSearchChange={setSearchQuery} />
+          <button
+            className='bg-amber-800 rounded rounded-sm text-amber-300 px-4 hover:cursor-pointer hover:bg-amber-700'
+            onClick={() => navigate('/cart')}
+          >
+            Cart
+          </button>
         </div>
       )}
       {isLoading && <LoadingSpinner />}
@@ -73,7 +131,11 @@ export default function HomePage() {
         </div>
       )}
       {!isLoading && !error && products.length > 0 && (
-        <ProductList products={products} />
+        <ProductList
+          itemsInCart={itemsInCart}
+          products={products}
+          updateCartItems={handleCartChange}
+        />
       )}
       <Pagnination
         currentPage={currentPage}

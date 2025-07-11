@@ -42,9 +42,9 @@ export default function CategoryFilter({
   };
 
   return (
-    <div className='text-white flex items-center gap-2'>
+    <div className='text-amber-400 flex items-center gap-2'>
       <select
-        className='bg-amber-700 rounded rounded-md p-1 px-2 focus:outline-amber-400'
+        className='bg-amber-800 rounded rounded-md p-1 px-2 focus:outline-amber-400'
         name='filter'
         id='filter'
         onChange={handleCategoryChange}

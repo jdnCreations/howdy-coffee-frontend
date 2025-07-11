@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 interface CartItem {
@@ -20,27 +20,28 @@ export default function CartPage() {
 
   const navigate = useNavigate();
 
+  const fetchCartItems = useCallback(async () => {
+    if (!cartToken) {
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `http://localhost:3000/api/carts/${cartToken}`
+      );
+      if (!response.ok) {
+        throw new Error('Could not fetch cart items');
+      }
+
+      const data = await response.json();
+      setItemsInCart(data.items);
+    } catch (error) {
+      console.error(error);
+    }
+  }, [cartToken]);
+
   // get cartToken from localStorage, if it exists fetch products from api
   useEffect(() => {
-    const fetchCartItems = async () => {
-      if (!cartToken) {
-        return;
-      }
-      try {
-        const response = await fetch(
-          `http://localhost:3000/api/carts/${cartToken}`
-        );
-        if (!response.ok) {
-          throw new Error('Could not fetch cart items');
-        }
-
-        const data = await response.json();
-        setItemsInCart(data.items);
-      } catch (error) {
-        console.error(error);
-      }
-    };
-
     const createCart = async () => {
       const response = await fetch('http://localhost:3000/api/carts', {
         method: 'POST',
@@ -50,7 +51,6 @@ export default function CartPage() {
       }
 
       const data = await response.json();
-      console.log(data);
       if (data.cartToken) {
         localStorage.setItem('cartToken', data.cartToken);
         setCartToken(data.cartToken);
@@ -68,7 +68,7 @@ export default function CartPage() {
     }
 
     fetchCartItems();
-  }, [cartToken]);
+  }, [cartToken, fetchCartItems]);
 
   const removeItemFromCart = async (productId: number) => {
     const response = await fetch(
@@ -81,12 +81,14 @@ export default function CartPage() {
         },
       }
     );
+
+    setItemsInCart(itemsInCart.filter((item) => item.product.id !== productId));
+
     if (!response.ok) {
       throw new Error('Could not remove item from cart');
     }
 
-    // remove item from itemsInCart
-    setItemsInCart(itemsInCart.filter((item) => item.product.id !== productId));
+    fetchCartItems();
   };
 
   return (
